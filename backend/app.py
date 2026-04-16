@@ -7,43 +7,49 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import yfinance as yf
 import warnings
+import os   # ✅ IMPORTANT FIX
+
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app)
 
+
+@app.route("/")
+def home():
+    return "Backend is running 🚀"
+
+
 def fetch_stock_data(ticker, period="1y"):
-    """Fetch stock data using yfinance"""
-    stock = yf.Ticker(ticker)
-    df = stock.history(period=period)
-    if df.empty:
+    try:
+        stock = yf.Ticker(ticker)
+        df = stock.history(period=period)
+        if df.empty:
+            return None, None
+        return df, stock.info
+    except:
         return None, None
-    info = stock.info
-    return df, info
+
 
 def predict_stock(df, days_ahead=30):
-    """Simple Linear Regression prediction on closing prices"""
     df = df.reset_index()
     df['Days'] = np.arange(len(df))
 
     X = df[['Days']].values
     y = df['Close'].values
 
-    # Scale
     scaler_X = MinMaxScaler()
     scaler_y = MinMaxScaler()
+
     X_scaled = scaler_X.fit_transform(X)
     y_scaled = scaler_y.fit_transform(y.reshape(-1, 1)).ravel()
 
-    # Train
     model = LinearRegression()
     model.fit(X_scaled, y_scaled)
 
-    # Past predictions
     y_pred_scaled = model.predict(X_scaled)
     y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).ravel()
 
-    # Future
     future_days = np.arange(len(df), len(df) + days_ahead).reshape(-1, 1)
     future_scaled = scaler_X.transform(future_days)
     future_pred_scaled = model.predict(future_scaled)
@@ -61,69 +67,56 @@ def predict_stock(df, days_ahead=30):
         "dates": df['Date'].dt.strftime('%Y-%m-%d').tolist()
     }
 
+
 @app.route('/api/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
-    ticker = data.get('ticker', 'AAPL').upper()
-    period = data.get('period', '1y')
-    days_ahead = int(data.get('days_ahead', 30))
+    try:
+        data = request.get_json()
 
-    df, info = fetch_stock_data(ticker, period)
+        ticker = data.get('ticker', 'AAPL').upper()
+        period = data.get('period', '1y')
+        days_ahead = int(data.get('days_ahead', 30))
 
-    if df is None or len(df) < 30:
-        return jsonify({'error': f'Could not fetch data for ticker: {ticker}'}), 400
+        df, info = fetch_stock_data(ticker, period)
 
-    result = predict_stock(df, days_ahead)
+        if df is None or len(df) < 30:
+            return jsonify({'error': f'Invalid ticker: {ticker}'}), 400
 
-    # Stock summary info
-    current_price = round(df['Close'].iloc[-1], 2)
-    prev_price = round(df['Close'].iloc[-2], 2)
-    change = round(current_price - prev_price, 2)
-    change_pct = round((change / prev_price) * 100, 2)
-    high_52 = round(df['Close'].max(), 2)
-    low_52 = round(df['Close'].min(), 2)
-    avg_volume = int(df['Volume'].mean())
+        result = predict_stock(df, days_ahead)
 
-    return jsonify({
-        'ticker': ticker,
-        'current_price': current_price,
-        'change': change,
-        'change_pct': change_pct,
-        'high_52w': high_52,
-        'low_52w': low_52,
-        'avg_volume': avg_volume,
-        'predicted_next': round(result['future'][0], 2),
-        'predicted_30d': round(result['future'][-1], 2),
-        'mse': result['mse'],
-        'r2': result['r2'],
-        'chart': {
-            'dates': result['dates'],
-            'actual': result['actual'],
-            'predicted': result['predicted'],
-            'future': result['future']
-        }
-    })
+        current_price = round(df['Close'].iloc[-1], 2)
+        prev_price = round(df['Close'].iloc[-2], 2)
 
-@app.route('/api/search', methods=['GET'])
-def search():
-    """Return list of popular stocks"""
-    stocks = [
-        {"symbol": "AAPL", "name": "Apple Inc."},
-        {"symbol": "GOOGL", "name": "Alphabet Inc."},
-        {"symbol": "MSFT", "name": "Microsoft Corp."},
-        {"symbol": "AMZN", "name": "Amazon.com Inc."},
-        {"symbol": "TSLA", "name": "Tesla Inc."},
-        {"symbol": "META", "name": "Meta Platforms"},
-        {"symbol": "NVDA", "name": "NVIDIA Corp."},
-        {"symbol": "NFLX", "name": "Netflix Inc."},
-        {"symbol": "RELIANCE.NS", "name": "Reliance Industries"},
-        {"symbol": "TCS.NS", "name": "Tata Consultancy Services"},
-    ]
-    return jsonify(stocks)
+        change = round(current_price - prev_price, 2)
+        change_pct = round((change / prev_price) * 100, 2)
 
-@app.route('/api/health', methods=['GET'])
+        return jsonify({
+            'ticker': ticker,
+            'current_price': current_price,
+            'change': change,
+            'change_pct': change_pct,
+            'high_52w': round(df['Close'].max(), 2),
+            'low_52w': round(df['Close'].min(), 2),
+            'predicted_next': round(result['future'][0], 2),
+            'predicted_30d': round(result['future'][-1], 2),
+            'mse': result['mse'],
+            'r2': result['r2'],
+            'chart': {
+                'dates': result['dates'],
+                'actual': result['actual'],
+                'predicted': result['predicted'],
+                'future': result['future']
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/health')
 def health():
     return jsonify({'status': 'ok'})
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
