@@ -22,12 +22,13 @@ def home():
 
 def fetch_stock_data(ticker, period="1y"):
     try:
-        stock = yf.Ticker(ticker)
-        df = stock.history(period=period)
+        df = yf.download(ticker, period=period, progress=False)
+
         if df.empty:
             return None, None
-        return df, stock.info
-    except:
+
+        return df, {}
+    except Exception as e:
         return None, None
 
 
