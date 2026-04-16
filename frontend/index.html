@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StockSight — AI Price Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #050a0f;
+      --surface: #0c1a26;
+      --card: #0f2133;
+      --border: #1a3a55;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --green: #00ff9d;
+      --red: #ff4d6d;
+      --text: #e2f0ff;
+      --muted: #5a8ab0;
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+```
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Header */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+  backdrop-filter: blur(10px);
+  background: rgba(5,10,15,0.8);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.logo span { color: var(--accent); }
+
+.badge {
+  background: rgba(0,229,255,0.1);
+  border: 1px solid rgba(0,229,255,0.3);
+  color: var(--accent);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  letter-spacing: 2px;
+}
+
+/* Hero */
+.hero {
+  padding: 60px 0 40px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+
+.hero h1 .highlight {
+  color: var(--accent);
+  position: relative;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* Search Bar */
+.search-section {
+  padding: 20px 0 40px;
+}
+
+.search-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+input, select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,229,255,0.1);
+}
+
+input::placeholder { color: var(--muted); }
+
+select option { background: var(--card); }
+
+.btn-predict {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 11px 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-predict:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(0,229,255,0.3);
+}
+
+.btn-predict:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Quick picks */
+.quick-picks {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.quick-pick {
+  background: rgba(0,229,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-pick:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,229,255,0.1);
+}
+
+/* Stats Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.stat-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: var(--font-head);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+
+/* Chart */
+.chart-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chart-title {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.chart-wrap { position: relative; height: 350px; }
+
+/* Model info */
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.model-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.model-card h3 {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.model-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(26,58,85,0.5);
+  color: var(--muted);
+}
+
+.model-row:last-child { border-bottom: none; }
+.model-row span:last-child { color: var(--text); font-weight: bold; }
+
+/* Loading */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 60px;
+  color: var(--muted);
+}
+
+.loading.active { display: block; }
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Results hidden */
+#results { display: none; }
+#results.visible { display: block; }
+
+/* Error */
+.error-box {
+  background: rgba(255,77,109,0.1);
+  border: 1px solid rgba(255,77,109,0.3);
+  color: var(--red);
+  padding: 16px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: none;
+}
+
+.error-box.active { display: block; }
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-top: 40px;
+}
+
+@media (max-width: 600px) {
+  .model-grid { grid-template-columns: 1fr; }
+  .search-box { flex-direction: column; }
+  .btn-predict { width: 100%; }
+}
+```
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">Stock<span>Sight</span></div>
+      <div class="badge">ML PREDICTOR</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+```
+<div class="hero">
+  <h1>Predict <span class="highlight">Stock</span><br>Prices with ML</h1>
+  <p>Enter any stock ticker to forecast future prices using Linear Regression trained on historical market data.</p>
+</div>
+
+<div class="search-section">
+  <div class="search-box">
+    <div class="input-group">
+      <label>Stock Ticker</label>
+      <input type="text" id="tickerInput" placeholder="e.g. AAPL, TSLA, MSFT" value="AAPL" />
+    </div>
+    <div class="input-group" style="max-width:140px">
+      <label>History Period</label>
+      <select id="periodSelect">
+        <option value="6mo">6 Months</option>
+        <option value="1y" selected>1 Year</option>
+        <option value="2y">2 Years</option>
+      </select>
+    </div>
+    <div class="input-group" style="max-width:140px">
+      <label>Forecast Days</label>
+      <select id="daysSelect">
+        <option value="7">7 Days</option>
+        <option value="30" selected>30 Days</option>
+        <option value="60">60 Days</option>
+        <option value="90">90 Days</option>
+      </select>
+    </div>
+    <button class="btn-predict" id="predictBtn" onclick="runPrediction()">PREDICT →</button>
+  </div>
+  <div class="quick-picks">
+    <span style="font-size:11px;color:var(--muted);margin-right:4px;">Quick:</span>
+    <button class="quick-pick" onclick="quickPick('AAPL')">AAPL</button>
+    <button class="quick-pick" onclick="quickPick('GOOGL')">GOOGL</button>
+    <button class="quick-pick" onclick="quickPick('MSFT')">MSFT</button>
+    <button class="quick-pick" onclick="quickPick('TSLA')">TSLA</button>
+    <button class="quick-pick" onclick="quickPick('NVDA')">NVDA</button>
+    <button class="quick-pick" onclick="quickPick('META')">META</button>
+    <button class="quick-pick" onclick="quickPick('RELIANCE.NS')">RELIANCE</button>
+    <button class="quick-pick" onclick="quickPick('TCS.NS')">TCS</button>
+  </div>
+</div>
+
+<div class="error-box" id="errorBox"></div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <p>Fetching market data & running model...</p>
+</div>
+
+<div id="results">
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- Chart -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div class="chart-title" id="chartTitle">Price History & Forecast</div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#00e5ff"></span>Actual</span>
+        <span><span class="legend-dot" style="background:#7c3aed"></span>Model Fit</span>
+        <span><span class="legend-dot" style="background:#00ff9d"></span>Forecast</span>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="stockChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Model Info -->
+  <div class="model-grid">
+    <div class="model-card">
+      <h3>Model Metrics</h3>
+      <div class="model-row"><span>Algorithm</span><span>Linear Regression</span></div>
+      <div class="model-row"><span>Feature</span><span>Time (Days Index)</span></div>
+      <div class="model-row"><span>Scaling</span><span>MinMax Normalization</span></div>
+      <div class="model-row"><span>MSE</span><span id="metricMse">—</span></div>
+      <div class="model-row"><span>R² Score</span><span id="metricR2">—</span></div>
+    </div>
+    <div class="model-card">
+      <h3>Prediction Summary</h3>
+      <div class="model-row"><span>Current Price</span><span id="sumCurrent">—</span></div>
+      <div class="model-row"><span>Next Day Forecast</span><span id="sumNext">—</span></div>
+      <div class="model-row"><span>End of Forecast</span><span id="sumEnd">—</span></div>
+      <div class="model-row"><span>Trend</span><span id="sumTrend">—</span></div>
+      <div class="model-row"><span>52W High</span><span id="sum52H">—</span></div>
+      <div class="model-row"><span>52W Low</span><span id="sum52L">—</span></div>
+    </div>
+  </div>
+
+  <p style="font-size:11px;color:var(--muted);text-align:center;padding-bottom:10px;">
+    ⚠ This tool is for educational purposes only. Predictions are based on simple linear regression and should NOT be used for actual investment decisions.
+  </p>
+</div>
+```
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    STOCKSIGHT &nbsp;·&nbsp; STOCK PRICE PREDICTION &nbsp;·&nbsp; MINOR PROJECT &nbsp;·&nbsp; POWERED BY SCIKIT-LEARN + YFINANCE
+  </div>
+</footer>
+
+<script>
+  const API_BASE = 'http://localhost:5000';
+  let chartInstance = null;
+
+  function quickPick(ticker) {
+    document.getElementById('tickerInput').value = ticker;
+    runPrediction();
+  }
+
+  async function runPrediction() {
+    const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+    const period = document.getElementById('periodSelect').value;
+    const days = document.getElementById('daysSelect').value;
+
+    if (!ticker) return;
+
+    // Reset UI
+    document.getElementById('errorBox').classList.remove('active');
+    document.getElementById('results').classList.remove('visible');
+    document.getElementById('loading').classList.add('active');
+    document.getElementById('predictBtn').disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker, period, days_ahead: days })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Prediction failed');
+      }
+
+      renderResults(data, days);
+
+    } catch (err) {
+      const box = document.getElementById('errorBox');
+      box.textContent = '⚠ Error: ' + err.message + '. Make sure the backend is running on port 5000.';
+      box.classList.add('active');
+    } finally {
+      document.getElementById('loading').classList.remove('active');
+      document.getElementById('predictBtn').disabled = false;
+    }
+  }
+
+  function renderResults(data, daysAhead) {
+    // Stats
+    const changeClass = data.change >= 0 ? 'positive' : 'negative';
+    const changeSign = data.change >= 0 ? '+' : '';
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Current Price</div>
+        <div class="stat-value">$${data.current_price}</div>
+        <div class="stat-sub">${data.ticker}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Day Change</div>
+        <div class="stat-value ${changeClass}">${changeSign}${data.change}</div>
+        <div class="stat-sub ${changeClass}">${changeSign}${data.change_pct}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Next Day Forecast</div>
+        <div class="stat-value" style="color:var(--accent)">$${data.predicted_next}</div>
+        <div class="stat-sub">Linear Regression</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">${daysAhead}-Day Forecast</div>
+        <div class="stat-value" style="color:var(--green)">$${data.predicted_30d}</div>
+        <div class="stat-sub">End of period</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">R² Score</div>
+        <div class="stat-value">${data.r2}</div>
+        <div class="stat-sub">Model accuracy</div>
+      </div>
+    `;
+
+    // Chart
+    document.getElementById('chartTitle').textContent = `${data.ticker} — Price History & ${daysAhead}-Day Forecast`;
+    renderChart(data);
+
+    // Model info
+    document.getElementById('metricMse').textContent = data.mse;
+    document.getElementById('metricR2').textContent = data.r2;
+    document.getElementById('sumCurrent').textContent = '$' + data.current_price;
+    document.getElementById('sumNext').textContent = '$' + data.predicted_next;
+    document.getElementById('sumEnd').textContent = '$' + data.predicted_30d;
+    const trend = data.predicted_30d > data.current_price ? '📈 Bullish' : '📉 Bearish';
+    document.getElementById('sumTrend').textContent = trend;
+    document.getElementById('sum52H').textContent = '$' + data.high_52w;
+    document.getElementById('sum52L').textContent = '$' + data.low_52w;
+
+    document.getElementById('results').classList.add('visible');
+  }
+
+  function renderChart(data) {
+    if (chartInstance) chartInstance.destroy();
+
+    const ctx = document.getElementById('stockChart').getContext('2d');
+    const { dates, actual, predicted, future } = data.chart;
+
+    // Build future dates
+    const lastDate = new Date(dates[dates.length - 1]);
+    const futureDates = future.map((_, i) => {
+      const d = new Date(lastDate);
+      d.setDate(d.getDate() + i + 1);
+      return d.toISOString().split('T')[0];
+    });
+
+    const allDates = [...dates, ...futureDates];
+    const actualFull = [...actual, ...Array(future.length).fill(null)];
+    const predictedFull = [...predicted, ...Array(future.length).fill(null)];
+    const futureFull = [...Array(dates.length - 1).fill(null), actual[actual.length - 1], ...future];
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: allDates,
+        datasets: [
+          {
+            label: 'Actual',
+            data: actualFull,
+            borderColor: '#00e5ff',
+            backgroundColor: 'rgba(0,229,255,0.05)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: 'Model Fit',
+            data: predictedFull,
+            borderColor: '#7c3aed',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            borderDash: [4, 3],
+            tension: 0.3,
+          },
+          {
+            label: 'Forecast',
+            data: futureFull,
+            borderColor: '#00ff9d',
+            backgroundColor: 'rgba(0,255,157,0.07)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: true,
+          },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0c1a26',
+            borderColor: '#1a3a55',
+            borderWidth: 1,
+            titleColor: '#5a8ab0',
+            bodyColor: '#e2f0ff',
+            padding: 12,
+            callbacks: {
+              label: ctx => ` $${Number(ctx.raw).toFixed(2)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(26,58,85,0.4)' },
+            ticks: {
+              color: '#5a8ab0',
+              font: { family: 'Space Mono', size: 10 },
+              maxTicksLimit: 10,
+            }
+          },
+          y: {
+            grid: { color: 'rgba(26,58,85,0.4)' },
+            ticks: {
+              color: '#5a8ab0',
+              font: { family: 'Space Mono', size: 10 },
+              callback: v => '$' + v.toFixed(0)
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Allow Enter key
+  document.getElementById('tickerInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runPrediction();
+  });
+</script>
+
+</body>
+</html>

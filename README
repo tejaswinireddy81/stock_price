@@ -1,0 +1,74 @@
+A Minor Project that predicts stock prices using Linear Regression and real-time market data from Yahoo Finance.
+
+ Overview
+
+StockSight is a simple full-stack web application that:
+
+Fetches real-time stock data
+Trains a Linear Regression model
+Predicts future stock prices
+Displays results using interactive charts
+
+This project is designed to demonstrate ML + Web Integration in a beginner-friendly way.
+
+🗂 Project Structure
+stock-predictor/
+├── backend/
+│   ├── app.py             
+│   └── requirements.txt    
+└── frontend/
+    └── index.html    
+
+⚙️ Tech Stack
+Layer	Technology
+Frontend	HTML, CSS, JavaScript, Chart.js
+Backend	Python, Flask, Flask-CORS
+ML Model	scikit-learn (Linear Regression)
+Data Source	yfinance (Yahoo Finance API)
+
+
+🚀 Features
+📊 Real-time stock data fetching
+🤖 Machine Learning-based price prediction
+📈 Interactive charts using Chart.js
+🌐 Simple and lightweight frontend
+⚡ Fast API built with Flask
+
+🛠️ Setup & Run
+Step 1 — Backend Setup
+cd backend
+
+# Create virtual environment (recommended)
+python -m venv venv
+
+# Activate environment
+source venv/bin/activate       # Mac/Linux
+venv\Scripts\activate          # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the Flask server
+python app.py
+
+✅ Backend will run at:
+👉 http://localhost:5000
+
+Step 2 — Frontend
+
+Simply open the file in your browser:
+
+frontend/index.html
+
+You can:
+
+Double-click the file
+OR drag and drop into your browser
+🔮 How It Works
+User enters a stock symbol (e.g., AAPL, TSLA)
+Backend fetches historical data using yfinance
+Data is preprocessed using MinMaxScaler
+A Linear Regression model is trained
+Predictions are generated
+Results are sent to frontend
+Chart.js displays actual vs predicted prices
