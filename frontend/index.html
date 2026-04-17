@@ -2,687 +2,774 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StockSight — AI Price Predictor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StockSight — Price Predictor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #050a0f;
-      --surface: #0c1a26;
-      --card: #0f2133;
-      --border: #1a3a55;
+      --bg: #080c10;
+      --surface: #0e1318;
+      --card: #131920;
+      --border: #1e2d3d;
       --accent: #00e5ff;
-      --accent2: #7c3aed;
-      --green: #00ff9d;
-      --red: #ff4d6d;
-      --text: #e2f0ff;
-      --muted: #5a8ab0;
+      --accent2: #7b61ff;
+      --green: #00e676;
+      --red: #ff1744;
+      --text: #e8f4fd;
+      --muted: #5a7a94;
       --font-head: 'Syne', sans-serif;
       --font-mono: 'Space Mono', monospace;
     }
 
-```
-* { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-mono);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-/* Grid background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
+    /* Glow blobs */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
 
-/* Header */
-header {
-  border-bottom: 1px solid var(--border);
-  padding: 20px 0;
-  backdrop-filter: blur(10px);
-  background: rgba(5,10,15,0.8);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
+    /* ── HEADER ── */
+    header {
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
 
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-.logo {
-  font-family: var(--font-head);
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -1px;
-}
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 16px rgba(0,229,255,0.3);
+      animation: pulse-border 2s ease-in-out infinite;
+    }
 
-.logo span { color: var(--accent); }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 16px rgba(0,229,255,0.3); }
+      50%       { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
+    }
 
-.badge {
-  background: rgba(0,229,255,0.1);
-  border: 1px solid rgba(0,229,255,0.3);
-  color: var(--accent);
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 2px;
-  letter-spacing: 2px;
-}
+    .logo h1 {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 1.6rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-/* Hero */
-.hero {
-  padding: 60px 0 40px;
-  text-align: center;
-}
+    .badge {
+      font-size: 0.65rem;
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
 
-.hero h1 {
-  font-family: var(--font-head);
-  font-size: clamp(36px, 6vw, 72px);
-  font-weight: 800;
-  line-height: 1.0;
-  letter-spacing: -2px;
-  margin-bottom: 16px;
-}
+    /* ── SEARCH BAR ── */
+    .search-section {
+      padding: 40px 0 32px;
+    }
 
-.hero h1 .highlight {
-  color: var(--accent);
-  position: relative;
-}
+    .search-label {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
 
-.hero p {
-  color: var(--muted);
-  font-size: 14px;
-  max-width: 500px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-/* Search Bar */
-.search-section {
-  padding: 20px 0 40px;
-}
+    .input-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
 
-.search-box {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 24px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
+    .input-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      padding: 14px 18px 14px 48px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
 
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  min-width: 140px;
-}
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+    }
 
-label {
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--muted);
-  text-transform: uppercase;
-}
+    .input-wrap input::placeholder {
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
 
-input, select {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  padding: 10px 14px;
-  border-radius: 4px;
-  outline: none;
-  transition: border-color 0.2s;
-}
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
 
-input:focus, select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(0,229,255,0.1);
-}
+    .predict-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 8px;
+      color: #080c10;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
 
-input::placeholder { color: var(--muted); }
+    .predict-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,229,255,0.3);
+    }
 
-select option { background: var(--card); }
+    .predict-btn:active:not(:disabled) { transform: translateY(0); }
 
-.btn-predict {
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  font-family: var(--font-head);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 11px 28px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
+    .predict-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
-.btn-predict:hover {
-  background: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 30px rgba(0,229,255,0.3);
-}
+    .quick-symbols {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
 
-.btn-predict:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
+    .sym-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
 
-/* Quick picks */
-.quick-picks {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
+    .sym-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0,229,255,0.05);
+    }
 
-.quick-pick {
-  background: rgba(0,229,255,0.05);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 5px 12px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+    /* ── STATUS / ERROR ── */
+    .status-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      font-size: 0.8rem;
+    }
 
-.quick-pick:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(0,229,255,0.1);
-}
+    .status-bar.show { display: flex; }
+    .status-bar.loading { border-color: var(--accent2); color: var(--accent2); }
+    .status-bar.error   { border-color: var(--red);    color: var(--red); }
+    .status-bar.success { border-color: var(--green);  color: var(--green); }
 
-/* Stats Cards */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
-}
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(123,97,255,0.3);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-.stat-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 18px;
-  position: relative;
-  overflow: hidden;
-}
+    /* ── STATS CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
 
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--accent);
-}
+    .stats-grid.visible { opacity: 1; transform: none; }
 
-.stat-label {
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
 
-.stat-value {
-  font-family: var(--font-head);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -1px;
-}
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
 
-.stat-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 4px;
-}
+    .stat-label {
+      font-size: 0.62rem;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
 
-.positive { color: var(--green); }
-.negative { color: var(--red); }
+    .stat-value {
+      font-family: var(--font-head);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text);
+    }
 
-/* Chart */
-.chart-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
+    .stat-value.up   { color: var(--green); }
+    .stat-value.down { color: var(--red); }
 
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
+    .stat-sub {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
 
-.chart-title {
-  font-family: var(--font-head);
-  font-size: 18px;
-  font-weight: 700;
-}
+    /* ── CHART ── */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s 0.1s, transform 0.4s 0.1s;
+    }
 
-.legend {
-  display: flex;
-  gap: 16px;
-  font-size: 11px;
-  color: var(--muted);
-}
+    .chart-card.visible { opacity: 1; transform: none; }
 
-.legend-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 5px;
-}
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
 
-.chart-wrap { position: relative; height: 350px; }
+    .chart-title {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 600;
+    }
 
-/* Model info */
-.model-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 24px;
-}
+    .legend {
+      display: flex;
+      gap: 16px;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
 
-.model-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 20px;
-}
+    .leg-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
 
-.model-card h3 {
-  font-family: var(--font-head);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 12px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
+    .chart-wrap {
+      position: relative;
+      height: 320px;
+    }
 
-.model-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(26,58,85,0.5);
-  color: var(--muted);
-}
+    /* ── PREDICTIONS TABLE ── */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s 0.2s, transform 0.4s 0.2s;
+    }
 
-.model-row:last-child { border-bottom: none; }
-.model-row span:last-child { color: var(--text); font-weight: bold; }
+    .table-card.visible { opacity: 1; transform: none; }
 
-/* Loading */
-.loading {
-  display: none;
-  text-align: center;
-  padding: 60px;
-  color: var(--muted);
-}
+    .table-card h3 {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
 
-.loading.active { display: block; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 2px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 16px;
-}
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(30,45,61,0.5);
+    }
 
-/* Results hidden */
-#results { display: none; }
-#results.visible { display: block; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(0,229,255,0.03); }
 
-/* Error */
-.error-box {
-  background: rgba(255,77,109,0.1);
-  border: 1px solid rgba(255,77,109,0.3);
-  color: var(--red);
-  padding: 16px 20px;
-  border-radius: 6px;
-  font-size: 13px;
-  display: none;
-}
+    .tag-actual {
+      background: rgba(0,229,255,0.1);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+    }
 
-.error-box.active { display: block; }
+    .tag-pred {
+      background: rgba(123,97,255,0.15);
+      color: var(--accent2);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+    }
 
-/* Footer */
-footer {
-  border-top: 1px solid var(--border);
-  padding: 24px 0;
-  text-align: center;
-  color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 1px;
-  margin-top: 40px;
-}
+    /* ── PLACEHOLDER ── */
+    .placeholder {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--muted);
+    }
 
-@media (max-width: 600px) {
-  .model-grid { grid-template-columns: 1fr; }
-  .search-box { flex-direction: column; }
-  .btn-predict { width: 100%; }
-}
-```
+    .placeholder-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
 
+    .placeholder p {
+      font-size: 0.85rem;
+      max-width: 320px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+    }
+
+    /* ── WAKE UP NOTICE ── */
+    .wake-notice {
+      display: none;
+      background: rgba(123,97,255,0.08);
+      border: 1px solid var(--accent2);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      margin-bottom: 16px;
+    }
+    .wake-notice.show { display: block; }
+
+    @media (max-width: 600px) {
+      .logo h1 { font-size: 1.2rem; }
+      .chart-wrap { height: 240px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="container">
-    <div class="header-inner">
-      <div class="logo">Stock<span>Sight</span></div>
-      <div class="badge">ML PREDICTOR</div>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📈</div>
+      <h1>StockSight</h1>
+    </div>
+    <span class="badge">ML Predictor · Linear Regression</span>
+  </header>
+
+  <!-- SEARCH -->
+  <section class="search-section">
+    <div class="search-label">Enter stock symbol</div>
+    <div class="search-row">
+      <div class="input-wrap">
+        <span class="input-icon">$</span>
+        <input type="text" id="symbolInput" placeholder="AAPL, TSLA, GOOGL..." maxlength="10" />
+      </div>
+      <button class="predict-btn" id="predictBtn" onclick="predict()">Predict →</button>
+    </div>
+    <div class="quick-symbols">
+      <span class="sym-chip" onclick="quickPick('AAPL')">AAPL</span>
+      <span class="sym-chip" onclick="quickPick('TSLA')">TSLA</span>
+      <span class="sym-chip" onclick="quickPick('GOOGL')">GOOGL</span>
+      <span class="sym-chip" onclick="quickPick('MSFT')">MSFT</span>
+      <span class="sym-chip" onclick="quickPick('AMZN')">AMZN</span>
+      <span class="sym-chip" onclick="quickPick('NVDA')">NVDA</span>
+      <span class="sym-chip" onclick="quickPick('META')">META</span>
+    </div>
+  </section>
+
+  <!-- WAKE NOTICE -->
+  <div class="wake-notice" id="wakeNotice">
+    ⏳ Backend is waking up (Render free tier). This may take 30–60 seconds on first request…
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar" id="statusBar">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusMsg">Loading...</span>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-label">Last Actual</div>
+      <div class="stat-value" id="statActual">—</div>
+      <div class="stat-sub">Most recent close</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Predicted</div>
+      <div class="stat-value" id="statPredicted">—</div>
+      <div class="stat-sub">Model output</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Difference</div>
+      <div class="stat-value" id="statDiff">—</div>
+      <div class="stat-sub">Actual vs Predicted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Data Points</div>
+      <div class="stat-value" id="statPoints">—</div>
+      <div class="stat-sub">Training samples</div>
     </div>
   </div>
-</header>
 
-<main>
-  <div class="container">
-
-```
-<div class="hero">
-  <h1>Predict <span class="highlight">Stock</span><br>Prices with ML</h1>
-  <p>Enter any stock ticker to forecast future prices using Linear Regression trained on historical market data.</p>
-</div>
-
-<div class="search-section">
-  <div class="search-box">
-    <div class="input-group">
-      <label>Stock Ticker</label>
-      <input type="text" id="tickerInput" placeholder="e.g. AAPL, TSLA, MSFT" value="AAPL" />
-    </div>
-    <div class="input-group" style="max-width:140px">
-      <label>History Period</label>
-      <select id="periodSelect">
-        <option value="6mo">6 Months</option>
-        <option value="1y" selected>1 Year</option>
-        <option value="2y">2 Years</option>
-      </select>
-    </div>
-    <div class="input-group" style="max-width:140px">
-      <label>Forecast Days</label>
-      <select id="daysSelect">
-        <option value="7">7 Days</option>
-        <option value="30" selected>30 Days</option>
-        <option value="60">60 Days</option>
-        <option value="90">90 Days</option>
-      </select>
-    </div>
-    <button class="btn-predict" id="predictBtn" onclick="runPrediction()">PREDICT →</button>
-  </div>
-  <div class="quick-picks">
-    <span style="font-size:11px;color:var(--muted);margin-right:4px;">Quick:</span>
-    <button class="quick-pick" onclick="quickPick('AAPL')">AAPL</button>
-    <button class="quick-pick" onclick="quickPick('GOOGL')">GOOGL</button>
-    <button class="quick-pick" onclick="quickPick('MSFT')">MSFT</button>
-    <button class="quick-pick" onclick="quickPick('TSLA')">TSLA</button>
-    <button class="quick-pick" onclick="quickPick('NVDA')">NVDA</button>
-    <button class="quick-pick" onclick="quickPick('META')">META</button>
-    <button class="quick-pick" onclick="quickPick('RELIANCE.NS')">RELIANCE</button>
-    <button class="quick-pick" onclick="quickPick('TCS.NS')">TCS</button>
-  </div>
-</div>
-
-<div class="error-box" id="errorBox"></div>
-
-<div class="loading" id="loading">
-  <div class="spinner"></div>
-  <p>Fetching market data & running model...</p>
-</div>
-
-<div id="results">
-  <!-- Stats -->
-  <div class="stats-grid" id="statsGrid"></div>
-
-  <!-- Chart -->
-  <div class="chart-section">
+  <!-- CHART -->
+  <div class="chart-card" id="chartCard">
     <div class="chart-header">
-      <div class="chart-title" id="chartTitle">Price History & Forecast</div>
+      <div class="chart-title" id="chartTitle">Price History</div>
       <div class="legend">
-        <span><span class="legend-dot" style="background:#00e5ff"></span>Actual</span>
-        <span><span class="legend-dot" style="background:#7c3aed"></span>Model Fit</span>
-        <span><span class="legend-dot" style="background:#00ff9d"></span>Forecast</span>
+        <span><span class="leg-dot" style="background:var(--accent)"></span>Actual</span>
+        <span><span class="leg-dot" style="background:var(--accent2)"></span>Predicted</span>
       </div>
     </div>
     <div class="chart-wrap">
-      <canvas id="stockChart"></canvas>
+      <canvas id="priceChart"></canvas>
     </div>
   </div>
 
-  <!-- Model Info -->
-  <div class="model-grid">
-    <div class="model-card">
-      <h3>Model Metrics</h3>
-      <div class="model-row"><span>Algorithm</span><span>Linear Regression</span></div>
-      <div class="model-row"><span>Feature</span><span>Time (Days Index)</span></div>
-      <div class="model-row"><span>Scaling</span><span>MinMax Normalization</span></div>
-      <div class="model-row"><span>MSE</span><span id="metricMse">—</span></div>
-      <div class="model-row"><span>R² Score</span><span id="metricR2">—</span></div>
-    </div>
-    <div class="model-card">
-      <h3>Prediction Summary</h3>
-      <div class="model-row"><span>Current Price</span><span id="sumCurrent">—</span></div>
-      <div class="model-row"><span>Next Day Forecast</span><span id="sumNext">—</span></div>
-      <div class="model-row"><span>End of Forecast</span><span id="sumEnd">—</span></div>
-      <div class="model-row"><span>Trend</span><span id="sumTrend">—</span></div>
-      <div class="model-row"><span>52W High</span><span id="sum52H">—</span></div>
-      <div class="model-row"><span>52W Low</span><span id="sum52L">—</span></div>
-    </div>
+  <!-- TABLE -->
+  <div class="table-card" id="tableCard">
+    <h3>Recent Predictions</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Actual Price</th>
+          <th>Predicted Price</th>
+          <th>Error</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
   </div>
 
-  <p style="font-size:11px;color:var(--muted);text-align:center;padding-bottom:10px;">
-    ⚠ This tool is for educational purposes only. Predictions are based on simple linear regression and should NOT be used for actual investment decisions.
-  </p>
+  <!-- PLACEHOLDER -->
+  <div class="placeholder" id="placeholder">
+    <div class="placeholder-icon">🔭</div>
+    <p>Enter a stock symbol above and click <strong>Predict</strong> to see ML-powered price predictions using historical Yahoo Finance data.</p>
+  </div>
+
 </div>
-```
-
-  </div>
-</main>
 
 <footer>
   <div class="container">
-    STOCKSIGHT &nbsp;·&nbsp; STOCK PRICE PREDICTION &nbsp;·&nbsp; MINOR PROJECT &nbsp;·&nbsp; POWERED BY SCIKIT-LEARN + YFINANCE
+    StockSight · Powered by Flask + scikit-learn + yfinance · For educational purposes only
   </div>
 </footer>
 
 <script>
-  const API_BASE = 'https://stock-price-4-i64o.onrender.com';
+  const API_BASE = "https://stock-price-4-i64o.onrender.com";
   let chartInstance = null;
 
-  function quickPick(ticker) {
-    document.getElementById('tickerInput').value = ticker;
-    runPrediction();
+  // Enter key support
+  document.getElementById('symbolInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') predict();
+  });
+
+  function quickPick(sym) {
+    document.getElementById('symbolInput').value = sym;
+    predict();
   }
 
-  async function runPrediction() {
-    const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
-    const period = document.getElementById('periodSelect').value;
-    const days = document.getElementById('daysSelect').value;
+  function setStatus(type, msg) {
+    const bar = document.getElementById('statusBar');
+    const spinner = document.getElementById('spinner');
+    const txt = document.getElementById('statusMsg');
+    bar.className = `status-bar show ${type}`;
+    spinner.style.display = type === 'loading' ? 'block' : 'none';
+    txt.textContent = msg;
+  }
 
-    if (!ticker) return;
+  function hideStatus() {
+    document.getElementById('statusBar').className = 'status-bar';
+  }
 
-    // Reset UI
-    document.getElementById('errorBox').classList.remove('active');
-    document.getElementById('results').classList.remove('visible');
-    document.getElementById('loading').classList.add('active');
-    document.getElementById('predictBtn').disabled = true;
+  async function predict() {
+    const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+    if (!symbol) { setStatus('error', 'Please enter a stock symbol.'); return; }
+
+    const btn = document.getElementById('predictBtn');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+
+    // Show wake notice for Render cold start
+    document.getElementById('wakeNotice').classList.add('show');
+    setStatus('loading', `Fetching data for ${symbol} and running prediction model…`);
+    hideResults();
 
     try {
-     const res = await fetch(`${API_BASE}/api/predict`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ ticker, period, days_ahead: days })
-});
+      const res = await fetch(`${API_BASE}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol })
+      });
 
-const text = await res.text();
+      document.getElementById('wakeNotice').classList.remove('show');
 
-let data;
-try {
-  data = JSON.parse(text);
-} catch (e) {
-  throw new Error("Backend returned invalid response");
-}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${res.status}`);
+      }
 
-if (!res.ok) {
-  throw new Error(data.error || 'Prediction failed');
-}
-
-      renderResults(data, days);
+      const data = await res.json();
+      displayResults(data, symbol);
+      setStatus('success', `✓ Prediction complete for ${symbol}`);
+      setTimeout(hideStatus, 3000);
 
     } catch (err) {
-      const box = document.getElementById('errorBox');
-      box.textContent = '⚠ Error: ' + err.message + '. Make sure the backend is running on port 5000.';
-      box.classList.add('active');
+      document.getElementById('wakeNotice').classList.remove('show');
+      setStatus('error', `Error: ${err.message}`);
     } finally {
-      document.getElementById('loading').classList.remove('active');
-      document.getElementById('predictBtn').disabled = false;
+      btn.disabled = false;
+      btn.textContent = 'Predict →';
     }
   }
 
-  function renderResults(data, daysAhead) {
-    // Stats
-    const changeClass = data.change >= 0 ? 'positive' : 'negative';
-    const changeSign = data.change >= 0 ? '+' : '';
-
-    document.getElementById('statsGrid').innerHTML = `
-      <div class="stat-card">
-        <div class="stat-label">Current Price</div>
-        <div class="stat-value">$${data.current_price}</div>
-        <div class="stat-sub">${data.ticker}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Day Change</div>
-        <div class="stat-value ${changeClass}">${changeSign}${data.change}</div>
-        <div class="stat-sub ${changeClass}">${changeSign}${data.change_pct}%</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Next Day Forecast</div>
-        <div class="stat-value" style="color:var(--accent)">$${data.predicted_next}</div>
-        <div class="stat-sub">Linear Regression</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">${daysAhead}-Day Forecast</div>
-        <div class="stat-value" style="color:var(--green)">$${data.predicted_30d}</div>
-        <div class="stat-sub">End of period</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">R² Score</div>
-        <div class="stat-value">${data.r2}</div>
-        <div class="stat-sub">Model accuracy</div>
-      </div>
-    `;
-
-    // Chart
-    document.getElementById('chartTitle').textContent = `${data.ticker} — Price History & ${daysAhead}-Day Forecast`;
-    renderChart(data);
-
-    // Model info
-    document.getElementById('metricMse').textContent = data.mse;
-    document.getElementById('metricR2').textContent = data.r2;
-    document.getElementById('sumCurrent').textContent = '$' + data.current_price;
-    document.getElementById('sumNext').textContent = '$' + data.predicted_next;
-    document.getElementById('sumEnd').textContent = '$' + data.predicted_30d;
-    const trend = data.predicted_30d > data.current_price ? '📈 Bullish' : '📉 Bearish';
-    document.getElementById('sumTrend').textContent = trend;
-    document.getElementById('sum52H').textContent = '$' + data.high_52w;
-    document.getElementById('sum52L').textContent = '$' + data.low_52w;
-
-    document.getElementById('results').classList.add('visible');
+  function hideResults() {
+    document.getElementById('placeholder').style.display = 'block';
+    document.getElementById('statsGrid').classList.remove('visible');
+    document.getElementById('chartCard').classList.remove('visible');
+    document.getElementById('tableCard').classList.remove('visible');
   }
 
-  function renderChart(data) {
-    if (chartInstance) chartInstance.destroy();
+  function displayResults(data, symbol) {
+    document.getElementById('placeholder').style.display = 'none';
 
-    const ctx = document.getElementById('stockChart').getContext('2d');
-    const { dates, actual, predicted, future } = data.chart;
+    // ── Unpack response ──
+    // Supports: { dates, actual_prices, predicted_prices }
+    // Also handles: { predictions: [...] } or flat arrays
+    let dates = data.dates || [];
+    let actual = (data.actual_prices || data.actual || []).map(Number);
+    let predicted = (data.predicted_prices || data.predicted || []).map(Number);
 
-    // Build future dates
-    const lastDate = new Date(dates[dates.length - 1]);
-    const futureDates = future.map((_, i) => {
-      const d = new Date(lastDate);
-      d.setDate(d.getDate() + i + 1);
-      return d.toISOString().split('T')[0];
+    // Fallback: if backend returns { predictions: [{date, actual, predicted}] }
+    if ((!actual.length) && data.predictions) {
+      dates = data.predictions.map(p => p.date || '');
+      actual = data.predictions.map(p => Number(p.actual));
+      predicted = data.predictions.map(p => Number(p.predicted));
+    }
+
+    const lastActual = actual[actual.length - 1] || 0;
+    const lastPred   = predicted[predicted.length - 1] || 0;
+    const diff = lastPred - lastActual;
+
+    // ── Stats ──
+    document.getElementById('statActual').textContent = `$${lastActual.toFixed(2)}`;
+    const predEl = document.getElementById('statPredicted');
+    predEl.textContent = `$${lastPred.toFixed(2)}`;
+    predEl.className = 'stat-value ' + (lastPred >= lastActual ? 'up' : 'down');
+
+    const diffEl = document.getElementById('statDiff');
+    diffEl.textContent = `${diff >= 0 ? '+' : ''}$${diff.toFixed(2)}`;
+    diffEl.className = 'stat-value ' + (diff >= 0 ? 'up' : 'down');
+
+    document.getElementById('statPoints').textContent = actual.length;
+
+    // ── Chart ──
+    document.getElementById('chartTitle').textContent = `${symbol} — Actual vs Predicted`;
+    renderChart(dates, actual, predicted);
+
+    // ── Table (last 10 rows) ──
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    const start = Math.max(0, actual.length - 10);
+    for (let i = start; i < actual.length; i++) {
+      const a = actual[i];
+      const p = predicted[i];
+      const err = (Math.abs(a - p) / a * 100).toFixed(2);
+      const isLast = i === actual.length - 1;
+      tbody.innerHTML += `
+        <tr>
+          <td style="color:var(--muted)">${i + 1}</td>
+          <td>${dates[i] || '—'}</td>
+          <td>$${a.toFixed(2)}</td>
+          <td style="color:var(--accent2)">$${p.toFixed(2)}</td>
+          <td style="color:${parseFloat(err) < 3 ? 'var(--green)' : 'var(--muted)'}">${err}%</td>
+          <td>${isLast ? '<span class="tag-pred">Latest</span>' : '<span class="tag-actual">Historical</span>'}</td>
+        </tr>`;
+    }
+
+    // ── Animate in ──
+    requestAnimationFrame(() => {
+      document.getElementById('statsGrid').classList.add('visible');
+      document.getElementById('chartCard').classList.add('visible');
+      document.getElementById('tableCard').classList.add('visible');
     });
+  }
 
-    const allDates = [...dates, ...futureDates];
-    const actualFull = [...actual, ...Array(future.length).fill(null)];
-    const predictedFull = [...predicted, ...Array(future.length).fill(null)];
-    const futureFull = [...Array(dates.length - 1).fill(null), actual[actual.length - 1], ...future];
+  function renderChart(labels, actual, predicted) {
+    if (chartInstance) { chartInstance.destroy(); }
+    const ctx = document.getElementById('priceChart').getContext('2d');
+
+    // Thin out labels for readability
+    const step = Math.max(1, Math.floor(labels.length / 10));
+    const sparseLabels = labels.map((l, i) => i % step === 0 ? l : '');
 
     chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: allDates,
+        labels: sparseLabels,
         datasets: [
           {
             label: 'Actual',
-            data: actualFull,
+            data: actual,
             borderColor: '#00e5ff',
             backgroundColor: 'rgba(0,229,255,0.05)',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            tension: 0.3,
-            fill: true,
-          },
-          {
-            label: 'Model Fit',
-            data: predictedFull,
-            borderColor: '#7c3aed',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            borderDash: [4, 3],
-            tension: 0.3,
-          },
-          {
-            label: 'Forecast',
-            data: futureFull,
-            borderColor: '#00ff9d',
-            backgroundColor: 'rgba(0,255,157,0.07)',
             borderWidth: 2,
             pointRadius: 0,
+            pointHoverRadius: 5,
             tension: 0.3,
             fill: true,
           },
+          {
+            label: 'Predicted',
+            data: predicted,
+            borderColor: '#7b61ff',
+            backgroundColor: 'rgba(123,97,255,0.05)',
+            borderWidth: 2,
+            borderDash: [6, 3],
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            fill: true,
+          }
         ]
       },
       options: {
@@ -692,44 +779,33 @@ if (!res.ok) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0c1a26',
-            borderColor: '#1a3a55',
+            backgroundColor: '#0e1318',
+            borderColor: '#1e2d3d',
             borderWidth: 1,
-            titleColor: '#5a8ab0',
-            bodyColor: '#e2f0ff',
-            padding: 12,
+            titleColor: '#5a7a94',
+            bodyColor: '#e8f4fd',
             callbacks: {
-              label: ctx => ` $${Number(ctx.raw).toFixed(2)}`
+              label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`
             }
           }
         },
         scales: {
           x: {
-            grid: { color: 'rgba(26,58,85,0.4)' },
-            ticks: {
-              color: '#5a8ab0',
-              font: { family: 'Space Mono', size: 10 },
-              maxTicksLimit: 10,
-            }
+            grid: { color: 'rgba(30,45,61,0.6)' },
+            ticks: { color: '#5a7a94', font: { family: 'Space Mono', size: 10 }, maxRotation: 0 }
           },
           y: {
-            grid: { color: 'rgba(26,58,85,0.4)' },
+            grid: { color: 'rgba(30,45,61,0.6)' },
             ticks: {
-              color: '#5a8ab0',
+              color: '#5a7a94',
               font: { family: 'Space Mono', size: 10 },
-              callback: v => '$' + v.toFixed(0)
+              callback: v => `$${v.toFixed(0)}`
             }
           }
         }
       }
     });
   }
-
-  // Allow Enter key
-  document.getElementById('tickerInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') runPrediction();
-  });
 </script>
-
 </body>
 </html>
