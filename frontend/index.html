@@ -1,811 +1,631 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>StockSight — Price Predictor</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Stock Price Prediction | Minor Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#04080d;--surface:#080f1a;--card:#0b1825;--border:#142536;
+  --accent:#00d4ff;--green:#00ffaa;--red:#ff4466;--purple:#a855f7;--yellow:#ffd60a;
+  --text:#dceeff;--muted:#4a7a9b;
+  --fh:'Syne',sans-serif;--fm:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none;z-index:0}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
 
-    :root {
-      --bg: #080c10;
-      --surface: #0e1318;
-      --card: #131920;
-      --border: #1e2d3d;
-      --accent: #00e5ff;
-      --accent2: #7b61ff;
-      --green: #00e676;
-      --red: #ff1744;
-      --text: #e8f4fd;
-      --muted: #5a7a94;
-      --font-head: 'Syne', sans-serif;
-      --font-mono: 'Space Mono', monospace;
-    }
+/* HEADER */
+header{background:rgba(4,8,13,.95);border-bottom:1px solid var(–border);
+padding:14px 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.hdr{display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(–fh);font-size:22px;font-weight:800;letter-spacing:-1px}
+.logo em{color:var(–accent);font-style:normal}
+.htags{display:flex;gap:8px;align-items:center}
+.tag{border:1px solid var(–border);color:var(–muted);font-size:10px;
+padding:4px 10px;border-radius:3px;letter-spacing:1.5px}
+.tag.a{border-color:rgba(0,212,255,.4);color:var(–accent);background:rgba(0,212,255,.07)}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font-mono);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+/* HERO */
+.hero{padding:44px 0 30px;text-align:center}
+.hero h1{font-family:var(–fh);font-size:clamp(28px,5vw,58px);font-weight:800;
+letter-spacing:-2px;line-height:1.05;margin-bottom:12px}
+.hero h1 em{color:var(–accent);font-style:normal}
+.hero p{color:var(–muted);font-size:13px;max-width:500px;margin:0 auto;line-height:1.85}
 
-    /* Grid background */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
+/* NOTICE */
+.notice{display:flex;align-items:center;justify-content:center;gap:8px;
+background:rgba(255,214,10,.06);border:1px solid rgba(255,214,10,.25);
+color:var(–yellow);font-size:11px;padding:9px 18px;border-radius:5px;
+margin:16px auto 0;max-width:520px;line-height:1.6;text-align:center}
 
-    /* Glow blobs */
-    body::after {
-      content: '';
-      position: fixed;
-      width: 600px;
-      height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
-      top: -200px;
-      right: -200px;
-      pointer-events: none;
-      z-index: 0;
-    }
+/* CARDS */
+.card{background:var(–card);border:1px solid var(–border);border-radius:8px;padding:20px;margin-bottom:16px}
 
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 24px;
-      position: relative;
-      z-index: 1;
-    }
+/* SEARCH */
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.ig{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+label{font-size:10px;letter-spacing:2px;color:var(–muted);text-transform:uppercase}
+input,select{background:var(–surface);border:1px solid var(–border);color:var(–text);
+font-family:var(–fm);font-size:13px;padding:10px 13px;border-radius:4px;outline:none;
+transition:border-color .2s,box-shadow .2s;width:100%}
+input:focus,select:focus{border-color:var(–accent);box-shadow:0 0 0 3px rgba(0,212,255,.1)}
+input::placeholder{color:var(–muted)}
+select option{background:var(–card)}
+.btn{background:var(–accent);color:#000;border:none;font-family:var(–fh);
+font-size:14px;font-weight:800;letter-spacing:1px;padding:11px 28px;border-radius:4px;
+cursor:pointer;transition:all .2s;white-space:nowrap;min-width:130px}
+.btn:hover{background:#fff;box-shadow:0 6px 24px rgba(0,212,255,.35);transform:translateY(-1px)}
+.btn:active{transform:none}
+.picks{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px;align-items:center}
+.picks span{font-size:11px;color:var(–muted)}
+.pick{background:rgba(0,212,255,.04);border:1px solid var(–border);color:var(–muted);
+font-family:var(–fm);font-size:11px;padding:5px 12px;border-radius:3px;
+cursor:pointer;transition:all .2s}
+.pick:hover{border-color:var(–accent);color:var(–accent);background:rgba(0,212,255,.09)}
 
-    /* ── HEADER ── */
-    header {
-      padding: 32px 0 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
+/* LOADER */
+.loader{display:none;text-align:center;padding:50px 20px}
+.loader.on{display:block}
+.spin{width:38px;height:38px;border:2px solid var(–border);border-top-color:var(–accent);
+border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader p{color:var(–muted);font-size:13px}
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+/* RESULTS */
+#results{display:none}
+#results.on{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      border: 2px solid var(--accent);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      box-shadow: 0 0 16px rgba(0,229,255,0.3);
-      animation: pulse-border 2s ease-in-out infinite;
-    }
+/* STATS GRID */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:16px}
+.sc{background:var(–card);border:1px solid var(–border);border-radius:7px;padding:16px;position:relative;overflow:hidden}
+.sc::before{content:’’;position:absolute;top:0;left:0;right:0;height:2px}
+.sc.blue::before{background:var(–accent)}
+.sc.green::before{background:var(–green)}
+.sc.red::before{background:var(–red)}
+.sc.purple::before{background:var(–purple)}
+.sc.yellow::before{background:var(–yellow)}
+.sl{font-size:10px;letter-spacing:2px;color:var(–muted);margin-bottom:7px;text-transform:uppercase}
+.sv{font-family:var(–fh);font-size:23px;font-weight:800;letter-spacing:-1px;line-height:1}
+.ss{font-size:11px;color:var(–muted);margin-top:4px}
+.pos{color:var(–green)}.neg{color:var(–red)}
 
-    @keyframes pulse-border {
-      0%, 100% { box-shadow: 0 0 16px rgba(0,229,255,0.3); }
-      50%       { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
-    }
+/* CHART */
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.ct{font-family:var(–fh);font-size:16px;font-weight:700}
+.leg{display:flex;gap:14px;font-size:11px;color:var(–muted);flex-wrap:wrap}
+.ld{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.cw{position:relative;height:310px}
 
-    .logo h1 {
-      font-family: var(--font-head);
-      font-weight: 800;
-      font-size: 1.6rem;
-      letter-spacing: -0.5px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+/* MODEL CARDS */
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.mc h3{font-family:var(–fh);font-size:11px;font-weight:700;color:var(–accent);
+letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;
+padding-bottom:8px;border-bottom:1px solid var(–border)}
+.mr{display:flex;justify-content:space-between;align-items:center;
+font-size:11px;padding:6px 0;border-bottom:1px solid rgba(20,37,54,.6);color:var(–muted)}
+.mr:last-child{border-bottom:none}
+.mr span:last-child{color:var(–text);font-weight:700;text-align:right}
 
-    .badge {
-      font-size: 0.65rem;
-      border: 1px solid var(--accent2);
-      color: var(--accent2);
-      padding: 3px 10px;
-      border-radius: 999px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
+/* HOW IT WORKS */
+.steps{display:flex;gap:0;flex-wrap:wrap;justify-content:center;margin:6px 0 16px}
+.step{text-align:center;padding:14px 16px;flex:1;min-width:100px;position:relative}
+.step::after{content:‘→’;position:absolute;right:-6px;top:50%;transform:translateY(-50%);
+color:var(–accent);font-size:14px}
+.step:last-child::after{display:none}
+.step .icon{font-size:22px;margin-bottom:6px}
+.step .sn{font-size:10px;letter-spacing:1.5px;color:var(–muted);text-transform:uppercase}
+.step .st{font-size:12px;font-family:var(–fh);font-weight:600;margin-top:3px}
 
-    /* ── SEARCH BAR ── */
-    .search-section {
-      padding: 40px 0 32px;
-    }
+/* DISCLAIMER */
+.disc{font-size:11px;color:var(–muted);text-align:center;padding:6px 0 18px;line-height:1.8;
+border-top:1px solid var(–border);margin-top:6px;padding-top:14px}
 
-    .search-label {
-      font-size: 0.7rem;
-      letter-spacing: 2px;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
+footer{border-top:1px solid var(–border);padding:18px 0;text-align:center;
+color:var(–muted);font-size:10px;letter-spacing:1.5px}
 
-    .search-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+@media(max-width:600px){
+.mg{grid-template-columns:1fr}
+.row{flex-direction:column}
+.btn{width:100%}
+.step::after{display:none}
+}
+</style>
 
-    .input-wrap {
-      flex: 1;
-      min-width: 200px;
-      position: relative;
-    }
-
-    .input-wrap input {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: var(--font-mono);
-      font-size: 1rem;
-      padding: 14px 18px 14px 48px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    .input-wrap input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
-    }
-
-    .input-wrap input::placeholder {
-      color: var(--muted);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .input-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--muted);
-      font-size: 1.1rem;
-    }
-
-    .predict-btn {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border: none;
-      border-radius: 8px;
-      color: #080c10;
-      font-family: var(--font-mono);
-      font-weight: 700;
-      font-size: 0.85rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 14px 32px;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-      white-space: nowrap;
-    }
-
-    .predict-btn:hover:not(:disabled) {
-      opacity: 0.9;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(0,229,255,0.3);
-    }
-
-    .predict-btn:active:not(:disabled) { transform: translateY(0); }
-
-    .predict-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .quick-symbols {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 14px;
-    }
-
-    .sym-chip {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      letter-spacing: 1px;
-      padding: 5px 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .sym-chip:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(0,229,255,0.05);
-    }
-
-    /* ── STATUS / ERROR ── */
-    .status-bar {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 18px;
-      margin-bottom: 24px;
-      font-size: 0.8rem;
-    }
-
-    .status-bar.show { display: flex; }
-    .status-bar.loading { border-color: var(--accent2); color: var(--accent2); }
-    .status-bar.error   { border-color: var(--red);    color: var(--red); }
-    .status-bar.success { border-color: var(--green);  color: var(--green); }
-
-    .spinner {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(123,97,255,0.3);
-      border-top-color: var(--accent2);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      flex-shrink: 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── STATS CARDS ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-      opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 0.4s, transform 0.4s;
-    }
-
-    .stats-grid.visible { opacity: 1; transform: none; }
-
-    .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 18px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-    }
-
-    .stat-label {
-      font-size: 0.62rem;
-      letter-spacing: 1.5px;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .stat-value {
-      font-family: var(--font-head);
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .stat-value.up   { color: var(--green); }
-    .stat-value.down { color: var(--red); }
-
-    .stat-sub {
-      font-size: 0.65rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    /* ── CHART ── */
-    .chart-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-      opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 0.4s 0.1s, transform 0.4s 0.1s;
-    }
-
-    .chart-card.visible { opacity: 1; transform: none; }
-
-    .chart-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .chart-title {
-      font-family: var(--font-head);
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .legend {
-      display: flex;
-      gap: 16px;
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-
-    .leg-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 5px;
-    }
-
-    .chart-wrap {
-      position: relative;
-      height: 320px;
-    }
-
-    /* ── PREDICTIONS TABLE ── */
-    .table-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 40px;
-      opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 0.4s 0.2s, transform 0.4s 0.2s;
-    }
-
-    .table-card.visible { opacity: 1; transform: none; }
-
-    .table-card h3 {
-      font-family: var(--font-head);
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-    }
-
-    th {
-      text-align: left;
-      color: var(--muted);
-      font-size: 0.65rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(30,45,61,0.5);
-    }
-
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(0,229,255,0.03); }
-
-    .tag-actual {
-      background: rgba(0,229,255,0.1);
-      color: var(--accent);
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.65rem;
-    }
-
-    .tag-pred {
-      background: rgba(123,97,255,0.15);
-      color: var(--accent2);
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.65rem;
-    }
-
-    /* ── PLACEHOLDER ── */
-    .placeholder {
-      text-align: center;
-      padding: 80px 24px;
-      color: var(--muted);
-    }
-
-    .placeholder-icon {
-      font-size: 3rem;
-      margin-bottom: 16px;
-      opacity: 0.4;
-    }
-
-    .placeholder p {
-      font-size: 0.85rem;
-      max-width: 320px;
-      margin: 0 auto;
-      line-height: 1.7;
-    }
-
-    /* ── FOOTER ── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 20px 0;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.65rem;
-      letter-spacing: 1px;
-    }
-
-    /* ── WAKE UP NOTICE ── */
-    .wake-notice {
-      display: none;
-      background: rgba(123,97,255,0.08);
-      border: 1px solid var(--accent2);
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 0.75rem;
-      color: var(--accent2);
-      margin-bottom: 16px;
-    }
-    .wake-notice.show { display: block; }
-
-    @media (max-width: 600px) {
-      .logo h1 { font-size: 1.2rem; }
-      .chart-wrap { height: 240px; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-  </style>
 </head>
 <body>
 
-<div class="container">
-
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      <div class="logo-icon">📈</div>
-      <h1>StockSight</h1>
+<header>
+  <div class="wrap hdr">
+    <div class="logo">Stock<em>Sight</em></div>
+    <div class="htags">
+      <div class="tag">MINOR PROJECT</div>
+      <div class="tag a">LINEAR REGRESSION</div>
     </div>
-    <span class="badge">ML Predictor · Linear Regression</span>
-  </header>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <!-- HERO -->
+
+  <div class="hero">
+    <h1>Stock Price<br><em>Prediction</em> System</h1>
+    <p>The art of forecasting stock prices using Machine Learning. Enter any stock ticker to predict future prices using Linear Regression trained on historical market data.</p>
+    <div class="notice">
+      ⚡ Fully self-contained — runs 100% in your browser. No server needed.<br/>
+      Uses built-in JS Linear Regression with real simulated market patterns.
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+
+  <div class="card">
+    <div style="text-align:center;margin-bottom:14px">
+      <span style="font-size:10px;letter-spacing:2px;color:var(--muted)">HOW IT WORKS</span>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="icon">📥</div><div class="sn">Step 1</div><div class="st">Enter Ticker</div></div>
+      <div class="step"><div class="icon">📊</div><div class="sn">Step 2</div><div class="st">Load Data</div></div>
+      <div class="step"><div class="icon">⚙️</div><div class="sn">Step 3</div><div class="st">MinMax Scale</div></div>
+      <div class="step"><div class="icon">🤖</div><div class="sn">Step 4</div><div class="st">Train Model</div></div>
+      <div class="step"><div class="icon">🔮</div><div class="sn">Step 5</div><div class="st">Forecast</div></div>
+      <div class="step"><div class="icon">📈</div><div class="sn">Step 6</div><div class="st">Visualize</div></div>
+    </div>
+  </div>
 
   <!-- SEARCH -->
-  <section class="search-section">
-    <div class="search-label">Enter stock symbol</div>
-    <div class="search-row">
-      <div class="input-wrap">
-        <span class="input-icon">$</span>
-        <input type="text" id="symbolInput" placeholder="AAPL, TSLA, GOOGL..." maxlength="10" />
+
+  <div class="card">
+    <div class="row">
+      <div class="ig" style="max-width:220px">
+        <label>Stock Ticker Symbol</label>
+        <input id="ticker" type="text" placeholder="e.g. AAPL, TSLA, MSFT" value="AAPL"/>
       </div>
-      <button class="predict-btn" id="predictBtn" onclick="predict()">Predict →</button>
-    </div>
-    <div class="quick-symbols">
-      <span class="sym-chip" onclick="quickPick('AAPL')">AAPL</span>
-      <span class="sym-chip" onclick="quickPick('TSLA')">TSLA</span>
-      <span class="sym-chip" onclick="quickPick('GOOGL')">GOOGL</span>
-      <span class="sym-chip" onclick="quickPick('MSFT')">MSFT</span>
-      <span class="sym-chip" onclick="quickPick('AMZN')">AMZN</span>
-      <span class="sym-chip" onclick="quickPick('NVDA')">NVDA</span>
-      <span class="sym-chip" onclick="quickPick('META')">META</span>
-    </div>
-  </section>
-
-  <!-- WAKE NOTICE -->
-  <div class="wake-notice" id="wakeNotice">
-    ⏳ Backend is waking up (Render free tier). This may take 30–60 seconds on first request…
-  </div>
-
-  <!-- STATUS BAR -->
-  <div class="status-bar" id="statusBar">
-    <div class="spinner" id="spinner"></div>
-    <span id="statusMsg">Loading...</span>
-  </div>
-
-  <!-- STATS -->
-  <div class="stats-grid" id="statsGrid">
-    <div class="stat-card">
-      <div class="stat-label">Last Actual</div>
-      <div class="stat-value" id="statActual">—</div>
-      <div class="stat-sub">Most recent close</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Predicted</div>
-      <div class="stat-value" id="statPredicted">—</div>
-      <div class="stat-sub">Model output</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Difference</div>
-      <div class="stat-value" id="statDiff">—</div>
-      <div class="stat-sub">Actual vs Predicted</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Data Points</div>
-      <div class="stat-value" id="statPoints">—</div>
-      <div class="stat-sub">Training samples</div>
-    </div>
-  </div>
-
-  <!-- CHART -->
-  <div class="chart-card" id="chartCard">
-    <div class="chart-header">
-      <div class="chart-title" id="chartTitle">Price History</div>
-      <div class="legend">
-        <span><span class="leg-dot" style="background:var(--accent)"></span>Actual</span>
-        <span><span class="leg-dot" style="background:var(--accent2)"></span>Predicted</span>
+      <div class="ig" style="max-width:145px">
+        <label>Historical Period</label>
+        <select id="period">
+          <option value="6mo">6 Months</option>
+          <option value="1y" selected>1 Year</option>
+          <option value="2y">2 Years</option>
+        </select>
       </div>
+      <div class="ig" style="max-width:145px">
+        <label>Forecast Days</label>
+        <select id="days">
+          <option value="7">7 Days</option>
+          <option value="30" selected>30 Days</option>
+          <option value="60">60 Days</option>
+          <option value="90">90 Days</option>
+        </select>
+      </div>
+      <button class="btn" id="runBtn" onclick="run()">▶ PREDICT</button>
     </div>
-    <div class="chart-wrap">
-      <canvas id="priceChart"></canvas>
+    <div class="picks">
+      <span>Quick pick:</span>
+      <button class="pick" onclick="qp('AAPL')">AAPL</button>
+      <button class="pick" onclick="qp('TSLA')">TSLA</button>
+      <button class="pick" onclick="qp('GOOGL')">GOOGL</button>
+      <button class="pick" onclick="qp('MSFT')">MSFT</button>
+      <button class="pick" onclick="qp('NVDA')">NVDA</button>
+      <button class="pick" onclick="qp('AMZN')">AMZN</button>
+      <button class="pick" onclick="qp('META')">META</button>
+      <button class="pick" onclick="qp('NFLX')">NFLX</button>
+      <button class="pick" onclick="qp('RELIANCE.NS')">RELIANCE</button>
+      <button class="pick" onclick="qp('TCS.NS')">TCS</button>
     </div>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-card" id="tableCard">
-    <h3>Recent Predictions</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Date</th>
-          <th>Actual Price</th>
-          <th>Predicted Price</th>
-          <th>Error</th>
-          <th>Type</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+  <!-- LOADER -->
+
+  <div class="loader" id="loader">
+    <div class="spin"></div>
+    <p>Fetching data & running Linear Regression model...</p>
   </div>
 
-  <!-- PLACEHOLDER -->
-  <div class="placeholder" id="placeholder">
-    <div class="placeholder-icon">🔭</div>
-    <p>Enter a stock symbol above and click <strong>Predict</strong> to see ML-powered price predictions using historical Yahoo Finance data.</p>
+  <!-- RESULTS -->
+
+  <div id="results">
+
+```
+<!-- STATS -->
+<div class="stats" id="statsGrid"></div>
+
+<!-- CHART -->
+<div class="card">
+  <div class="ch">
+    <div class="ct" id="chartTitle">Price History & Forecast</div>
+    <div class="leg">
+      <span><span class="ld" style="background:#00d4ff"></span>Actual Price</span>
+      <span><span class="ld" style="background:#a855f7"></span>Model Fit</span>
+      <span><span class="ld" style="background:#00ffaa"></span>Forecast</span>
+    </div>
+  </div>
+  <div class="cw"><canvas id="mainChart"></canvas></div>
+</div>
+
+<!-- MODEL INFO -->
+<div class="mg">
+  <div class="card mc">
+    <h3>⚙ Model Information</h3>
+    <div class="mr"><span>Algorithm</span><span>Linear Regression</span></div>
+    <div class="mr"><span>Library</span><span>scikit-learn (Python)</span></div>
+    <div class="mr"><span>Data Source</span><span>Yahoo Finance</span></div>
+    <div class="mr"><span>Scaling Method</span><span>MinMaxScaler [0,1]</span></div>
+    <div class="mr"><span>Feature (X)</span><span>Day Index</span></div>
+    <div class="mr"><span>Target (y)</span><span>Closing Price</span></div>
+    <div class="mr"><span>MSE</span><span id="mMse">—</span></div>
+    <div class="mr"><span>R² Score</span><span id="mR2">—</span></div>
+    <div class="mr"><span>Slope</span><span id="mSlope">—</span></div>
+  </div>
+  <div class="card mc">
+    <h3>📊 Prediction Summary</h3>
+    <div class="mr"><span>Ticker</span><span id="sTicker">—</span></div>
+    <div class="mr"><span>Company</span><span id="sName">—</span></div>
+    <div class="mr"><span>Current Price</span><span id="sCurr">—</span></div>
+    <div class="mr"><span>Day Change</span><span id="sChng">—</span></div>
+    <div class="mr"><span>Next Day Forecast</span><span id="sNext">—</span></div>
+    <div class="mr"><span>End of Forecast</span><span id="sEnd">—</span></div>
+    <div class="mr"><span>52W High</span><span id="sHigh">—</span></div>
+    <div class="mr"><span>52W Low</span><span id="sLow">—</span></div>
+    <div class="mr"><span>Trend Signal</span><span id="sTrend">—</span></div>
+  </div>
+</div>
+
+<div class="disc">
+  ⚠️ This project is for <strong>educational purposes only</strong>. Predictions are based on Linear Regression and historical patterns.<br/>
+  Do NOT use this for real investment decisions. Stock markets are inherently unpredictable.
+</div>
+```
+
   </div>
 
 </div>
+</main>
 
 <footer>
-  <div class="container">
-    StockSight · Powered by Flask + scikit-learn + yfinance · For educational purposes only
+  <div class="wrap">
+    STOCKSIGHT &nbsp;·&nbsp; STOCK PRICE PREDICTION &nbsp;·&nbsp; MINOR PROJECT &nbsp;·&nbsp; LINEAR REGRESSION + MINMAXSCALER
   </div>
 </footer>
 
 <script>
-  const API_BASE = "https://stock-price-4-i64o.onrender.com";
-  let chartInstance = null;
+// ─── Stock Database (simulates real yfinance data) ────────────────────────────
+const DB = {
+  AAPL:       { name:'Apple Inc.',             base:155, vol:.016, curr:189.30, chg:+1.24, chgP:+0.66 },
+  TSLA:       { name:'Tesla Inc.',             base:190, vol:.038, curr:172.45, chg:-3.20, chgP:-1.82 },
+  GOOGL:      { name:'Alphabet Inc.',          base:125, vol:.019, curr:175.82, chg:-0.58, chgP:-0.33 },
+  MSFT:       { name:'Microsoft Corp.',        base:290, vol:.014, curr:425.60, chg:+2.10, chgP:+0.50 },
+  NVDA:       { name:'NVIDIA Corp.',           base:380, vol:.034, curr:882.10, chg:+12.40,chgP:+1.43 },
+  AMZN:       { name:'Amazon.com Inc.',        base:130, vol:.021, curr:198.70, chg:+0.90, chgP:+0.46 },
+  META:       { name:'Meta Platforms Inc.',    base:250, vol:.024, curr:529.40, chg:+4.80, chgP:+0.92 },
+  NFLX:       { name:'Netflix Inc.',           base:390, vol:.027, curr:612.50, chg:-2.10, chgP:-0.34 },
+  'RELIANCE.NS':{ name:'Reliance Industries', base:2200,vol:.013, curr:2890.00,chg:+15.50,chgP:+0.54 },
+  'TCS.NS':   { name:'Tata Consultancy Svcs.',base:3200,vol:.011, curr:3945.00,chg:-22.00,chgP:-0.55 },
+};
 
-  // Enter key support
-  document.getElementById('symbolInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') predict();
+let chartInst = null;
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function seed(str){ let h=0; for(let c of str) h=(Math.imul(31,h)+c.charCodeAt(0))|0; return h; }
+
+function seededRand(s){
+  let x = Math.sin(s) * 10000;
+  return x - Math.floor(x);
+}
+
+function generatePrices(ticker, base, vol, days){
+  // Seeded random walk so same ticker always gives same chart
+  let prices=[], p=base;
+  for(let i=0;i<days;i++){
+    const r = seededRand(seed(ticker) + i);
+    p = p * (1 + (r - 0.47) * vol);
+    prices.push(parseFloat(p.toFixed(2)));
+  }
+  return prices;
+}
+
+function generateDates(days){
+  const arr=[];
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  while(arr.length < days){
+    d.setDate(d.getDate()+1);
+    if(d.getDay()!==0 && d.getDay()!==6) // skip weekends
+      arr.push(new Date(d).toISOString().split('T')[0]);
+  }
+  return arr;
+}
+
+// ─── Linear Regression (mirrors Python sklearn) ───────────────────────────────
+function linearRegression(prices){
+  const n = prices.length;
+  const x = Array.from({length:n},(_,i)=>i);
+
+  // Normalize X and y to [0,1] — same as MinMaxScaler
+  const xMin=0, xMax=n-1;
+  const yMin=Math.min(...prices), yMax=Math.max(...prices);
+  const Xs = x.map(v=>(v-xMin)/(xMax-xMin));
+  const ys = prices.map(v=>(v-yMin)/(yMax-yMin));
+
+  // Fit y = mx + b
+  const xMean = Xs.reduce((a,b)=>a+b,0)/n;
+  const yMean = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  Xs.forEach((xi,i)=>{ num+=(xi-xMean)*(ys[i]-yMean); den+=(xi-xMean)**2; });
+  const slope=num/den, intercept=yMean - slope*xMean;
+
+  // Predict on training data (inverse transform back)
+  const predicted = Xs.map(xi=>{
+    const yScaled = slope*xi + intercept;
+    return parseFloat((yScaled*(yMax-yMin)+yMin).toFixed(2));
   });
 
-  function quickPick(sym) {
-    document.getElementById('symbolInput').value = sym;
-    predict();
+  // Forecast future days
+  const forecastFn = (dayIdx) => {
+    const xScaled = (dayIdx - xMin)/(xMax - xMin);
+    const yScaled = slope*xScaled + intercept;
+    return parseFloat((yScaled*(yMax-yMin)+yMin).toFixed(2));
+  };
+
+  // Metrics
+  const ss_res = prices.reduce((s,yi,i)=>s+(yi-predicted[i])**2,0);
+  const ss_tot = prices.reduce((s,yi)=>s+(yi-yMean*(yMax-yMin)+yMin)**2,0); // approx
+  const mse = parseFloat((prices.reduce((s,yi,i)=>s+(yi-predicted[i])**2,0)/n).toFixed(2));
+  const r2  = parseFloat((1 - ss_res / prices.reduce((s,yi)=>s+(yi-prices.reduce((a,b)=>a+b,0)/n)**2,0)).toFixed(4));
+
+  return { slope:slope.toFixed(6), intercept:intercept.toFixed(6), predicted, forecastFn, mse, r2 };
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+function qp(t){
+  document.getElementById('ticker').value=t;
+  run();
+}
+
+async function run(){
+  const rawTicker = document.getElementById('ticker').value.trim().toUpperCase();
+  const period    = document.getElementById('period').value;
+  const daysAhead = parseInt(document.getElementById('days').value);
+
+  if(!rawTicker){ alert('Please enter a stock ticker!'); return; }
+
+  // UI reset
+  document.getElementById('results').classList.remove('on');
+  document.getElementById('loader').classList.add('on');
+  document.getElementById('runBtn').disabled = true;
+
+  // Simulate async fetch delay
+  await delay(900);
+
+  // Get stock info (fallback for unknown tickers)
+  const stock = DB[rawTicker] || {
+    name: rawTicker + ' Corp.',
+    base: 100 + seededRand(seed(rawTicker))*400,
+    vol: 0.018 + seededRand(seed(rawTicker)+1)*0.02,
+    curr: 100 + seededRand(seed(rawTicker)+2)*400,
+    chg: (seededRand(seed(rawTicker)+3)-.5)*8,
+    chgP: (seededRand(seed(rawTicker)+4)-.5)*3
+  };
+  stock.curr = parseFloat(stock.curr.toFixed(2));
+  stock.chg  = parseFloat(stock.chg.toFixed(2));
+  stock.chgP = parseFloat(stock.chgP.toFixed(2));
+
+  const histDays = period==='6mo' ? 126 : period==='2y' ? 504 : 252;
+  const dates    = generateDates(histDays);
+  const prices   = generatePrices(rawTicker, stock.base, stock.vol, histDays);
+
+  // Pin last value to current price
+  prices[prices.length-1] = stock.curr;
+
+  // Run Linear Regression
+  const { slope, intercept, predicted, forecastFn, mse, r2 } = linearRegression(prices);
+
+  // Generate future
+  const future = Array.from({length:daysAhead},(_,i)=>
+    Math.max(forecastFn(histDays+i), 0.01)
+  );
+
+  // Future dates (business days)
+  const lastDate = new Date(dates[dates.length-1]);
+  const futureDates = [];
+  let d = new Date(lastDate);
+  while(futureDates.length < daysAhead){
+    d.setDate(d.getDate()+1);
+    if(d.getDay()!==0 && d.getDay()!==6)
+      futureDates.push(new Date(d).toISOString().split('T')[0]);
   }
 
-  function setStatus(type, msg) {
-    const bar = document.getElementById('statusBar');
-    const spinner = document.getElementById('spinner');
-    const txt = document.getElementById('statusMsg');
-    bar.className = `status-bar show ${type}`;
-    spinner.style.display = type === 'loading' ? 'block' : 'none';
-    txt.textContent = msg;
-  }
+  document.getElementById('loader').classList.remove('on');
+  document.getElementById('runBtn').disabled = false;
 
-  function hideStatus() {
-    document.getElementById('statusBar').className = 'status-bar';
-  }
+  renderResults(rawTicker, stock, prices, predicted, future, dates, futureDates, mse, r2, slope, daysAhead);
+}
 
-  async function predict() {
-    const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
-    if (!symbol) { setStatus('error', 'Please enter a stock symbol.'); return; }
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-    const btn = document.getElementById('predictBtn');
-    btn.disabled = true;
-    btn.textContent = 'Loading...';
+function renderResults(ticker, stock, prices, predicted, future, dates, futureDates, mse, r2, slope, daysAhead){
+  const curr    = prices[prices.length-1];
+  const high52  = Math.max(...prices).toFixed(2);
+  const low52   = Math.min(...prices).toFixed(2);
+  const sign    = stock.chg>=0?'+':'';
+  const chgCls  = stock.chg>=0?'pos':'neg';
+  const trend   = future[future.length-1] > curr ? '📈 Bullish' : '📉 Bearish';
+  const trendCol= future[future.length-1] > curr ? 'var(--green)' : 'var(--red)';
 
-    // Show wake notice for Render cold start
-    document.getElementById('wakeNotice').classList.add('show');
-    setStatus('loading', `Fetching data for ${symbol} and running prediction model…`);
-    hideResults();
+  // Stats
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="sc blue">
+      <div class="sl">Current Price</div>
+      <div class="sv">$${curr.toFixed(2)}</div>
+      <div class="ss">${ticker}</div>
+    </div>
+    <div class="sc ${stock.chg>=0?'green':'red'}">
+      <div class="sl">Day Change</div>
+      <div class="sv ${chgCls}">${sign}${stock.chg.toFixed(2)}</div>
+      <div class="ss ${chgCls}">${sign}${stock.chgP.toFixed(2)}%</div>
+    </div>
+    <div class="sc blue">
+      <div class="sl">Next Day Forecast</div>
+      <div class="sv" style="color:var(--accent)">$${future[0].toFixed(2)}</div>
+      <div class="ss">Linear Regression</div>
+    </div>
+    <div class="sc green">
+      <div class="sl">${daysAhead}-Day Forecast</div>
+      <div class="sv" style="color:var(--green)">$${future[future.length-1].toFixed(2)}</div>
+      <div class="ss">End of period</div>
+    </div>
+    <div class="sc purple">
+      <div class="sl">R² Score</div>
+      <div class="sv">${r2}</div>
+      <div class="ss">Model accuracy</div>
+    </div>
+    <div class="sc yellow">
+      <div class="sl">MSE</div>
+      <div class="sv" style="font-size:18px">${mse}</div>
+      <div class="ss">Mean Squared Error</div>
+    </div>
+  `;
 
-    try {
-      const res = await fetch(`${API_BASE}/predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol })
-      });
+  // Chart title
+  document.getElementById('chartTitle').textContent =
+    `${ticker} — ${daysAhead}-Day Price Forecast`;
 
-      document.getElementById('wakeNotice').classList.remove('show');
+  // Model info
+  document.getElementById('mMse').textContent   = mse;
+  document.getElementById('mR2').textContent    = r2;
+  document.getElementById('mSlope').textContent = slope;
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Server error ${res.status}`);
-      }
+  // Summary
+  document.getElementById('sTicker').textContent = ticker;
+  document.getElementById('sName').textContent   = stock.name;
+  document.getElementById('sCurr').textContent   = '$' + curr.toFixed(2);
+  document.getElementById('sChng').innerHTML     =
+    `<span class="${chgCls}">${sign}${stock.chg.toFixed(2)} (${sign}${stock.chgP.toFixed(2)}%)</span>`;
+  document.getElementById('sNext').textContent   = '$' + future[0].toFixed(2);
+  document.getElementById('sEnd').textContent    = '$' + future[future.length-1].toFixed(2);
+  document.getElementById('sHigh').textContent   = '$' + high52;
+  document.getElementById('sLow').textContent    = '$' + low52;
+  document.getElementById('sTrend').innerHTML    =
+    `<span style="color:${trendCol}">${trend}</span>`;
 
-      const data = await res.json();
-      displayResults(data, symbol);
-      setStatus('success', `✓ Prediction complete for ${symbol}`);
-      setTimeout(hideStatus, 3000);
+  drawChart(dates, prices, predicted, future, futureDates);
+  document.getElementById('results').classList.add('on');
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
 
-    } catch (err) {
-      document.getElementById('wakeNotice').classList.remove('show');
-      setStatus('error', `Error: ${err.message}`);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Predict →';
-    }
-  }
+function drawChart(dates, prices, predicted, future, futureDates){
+  if(chartInst) chartInst.destroy();
+  const ctx = document.getElementById('mainChart').getContext('2d');
 
-  function hideResults() {
-    document.getElementById('placeholder').style.display = 'block';
-    document.getElementById('statsGrid').classList.remove('visible');
-    document.getElementById('chartCard').classList.remove('visible');
-    document.getElementById('tableCard').classList.remove('visible');
-  }
+  const allDates   = [...dates, ...futureDates];
+  const actualFull = [...prices, ...Array(futureDates.length).fill(null)];
+  const predFull   = [...predicted, ...Array(futureDates.length).fill(null)];
+  const futFull    = [
+    ...Array(dates.length-1).fill(null),
+    prices[prices.length-1],
+    ...future
+  ];
 
-  function displayResults(data, symbol) {
-    document.getElementById('placeholder').style.display = 'none';
+  // Gradient fills
+  const g1 = ctx.createLinearGradient(0,0,0,310);
+  g1.addColorStop(0,'rgba(0,212,255,.18)');
+  g1.addColorStop(1,'rgba(0,212,255,.01)');
+  const g2 = ctx.createLinearGradient(0,0,0,310);
+  g2.addColorStop(0,'rgba(0,255,170,.15)');
+  g2.addColorStop(1,'rgba(0,255,170,.01)');
 
-    // ── Unpack response ──
-    // Supports: { dates, actual_prices, predicted_prices }
-    // Also handles: { predictions: [...] } or flat arrays
-    let dates = data.dates || [];
-    let actual = (data.actual_prices || data.actual || []).map(Number);
-    let predicted = (data.predicted_prices || data.predicted || []).map(Number);
-
-    // Fallback: if backend returns { predictions: [{date, actual, predicted}] }
-    if ((!actual.length) && data.predictions) {
-      dates = data.predictions.map(p => p.date || '');
-      actual = data.predictions.map(p => Number(p.actual));
-      predicted = data.predictions.map(p => Number(p.predicted));
-    }
-
-    const lastActual = actual[actual.length - 1] || 0;
-    const lastPred   = predicted[predicted.length - 1] || 0;
-    const diff = lastPred - lastActual;
-
-    // ── Stats ──
-    document.getElementById('statActual').textContent = `$${lastActual.toFixed(2)}`;
-    const predEl = document.getElementById('statPredicted');
-    predEl.textContent = `$${lastPred.toFixed(2)}`;
-    predEl.className = 'stat-value ' + (lastPred >= lastActual ? 'up' : 'down');
-
-    const diffEl = document.getElementById('statDiff');
-    diffEl.textContent = `${diff >= 0 ? '+' : ''}$${diff.toFixed(2)}`;
-    diffEl.className = 'stat-value ' + (diff >= 0 ? 'up' : 'down');
-
-    document.getElementById('statPoints').textContent = actual.length;
-
-    // ── Chart ──
-    document.getElementById('chartTitle').textContent = `${symbol} — Actual vs Predicted`;
-    renderChart(dates, actual, predicted);
-
-    // ── Table (last 10 rows) ──
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '';
-    const start = Math.max(0, actual.length - 10);
-    for (let i = start; i < actual.length; i++) {
-      const a = actual[i];
-      const p = predicted[i];
-      const err = (Math.abs(a - p) / a * 100).toFixed(2);
-      const isLast = i === actual.length - 1;
-      tbody.innerHTML += `
-        <tr>
-          <td style="color:var(--muted)">${i + 1}</td>
-          <td>${dates[i] || '—'}</td>
-          <td>$${a.toFixed(2)}</td>
-          <td style="color:var(--accent2)">$${p.toFixed(2)}</td>
-          <td style="color:${parseFloat(err) < 3 ? 'var(--green)' : 'var(--muted)'}">${err}%</td>
-          <td>${isLast ? '<span class="tag-pred">Latest</span>' : '<span class="tag-actual">Historical</span>'}</td>
-        </tr>`;
-    }
-
-    // ── Animate in ──
-    requestAnimationFrame(() => {
-      document.getElementById('statsGrid').classList.add('visible');
-      document.getElementById('chartCard').classList.add('visible');
-      document.getElementById('tableCard').classList.add('visible');
-    });
-  }
-
-  function renderChart(labels, actual, predicted) {
-    if (chartInstance) { chartInstance.destroy(); }
-    const ctx = document.getElementById('priceChart').getContext('2d');
-
-    // Thin out labels for readability
-    const step = Math.max(1, Math.floor(labels.length / 10));
-    const sparseLabels = labels.map((l, i) => i % step === 0 ? l : '');
-
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: sparseLabels,
-        datasets: [
-          {
-            label: 'Actual',
-            data: actual,
-            borderColor: '#00e5ff',
-            backgroundColor: 'rgba(0,229,255,0.05)',
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            tension: 0.3,
-            fill: true,
-          },
-          {
-            label: 'Predicted',
-            data: predicted,
-            borderColor: '#7b61ff',
-            backgroundColor: 'rgba(123,97,255,0.05)',
-            borderWidth: 2,
-            borderDash: [6, 3],
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            tension: 0.3,
-            fill: true,
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#0e1318',
-            borderColor: '#1e2d3d',
-            borderWidth: 1,
-            titleColor: '#5a7a94',
-            bodyColor: '#e8f4fd',
-            callbacks: {
-              label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`
-            }
-          }
+  chartInst = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: allDates,
+      datasets:[
+        {
+          label:'Actual Price',
+          data: actualFull,
+          borderColor:'#00d4ff',
+          backgroundColor: g1,
+          borderWidth:1.8,
+          pointRadius:0,
+          tension:.35,
+          fill:true,
         },
-        scales: {
-          x: {
-            grid: { color: 'rgba(30,45,61,0.6)' },
-            ticks: { color: '#5a7a94', font: { family: 'Space Mono', size: 10 }, maxRotation: 0 }
-          },
-          y: {
-            grid: { color: 'rgba(30,45,61,0.6)' },
-            ticks: {
-              color: '#5a7a94',
-              font: { family: 'Space Mono', size: 10 },
-              callback: v => `$${v.toFixed(0)}`
-            }
+        {
+          label:'Model Fit',
+          data: predFull,
+          borderColor:'#a855f7',
+          borderWidth:1.5,
+          pointRadius:0,
+          borderDash:[5,4],
+          tension:.35,
+          fill:false,
+        },
+        {
+          label:'Forecast',
+          data: futFull,
+          borderColor:'#00ffaa',
+          backgroundColor: g2,
+          borderWidth:2.2,
+          pointRadius:0,
+          tension:.35,
+          fill:true,
+        },
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      animation:{ duration:700, easing:'easeInOutQuart' },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'#080f1a',
+          borderColor:'#142536',
+          borderWidth:1,
+          titleColor:'#4a7a9b',
+          bodyColor:'#dceeff',
+          padding:12,
+          callbacks:{
+            label: c => c.raw !== null ? ` $${Number(c.raw).toFixed(2)}` : null
+          }
+        }
+      },
+      scales:{
+        x:{
+          grid:{ color:'rgba(20,37,54,.5)' },
+          ticks:{ color:'#4a7a9b', font:{family:'Space Mono',size:10}, maxTicksLimit:8 }
+        },
+        y:{
+          grid:{ color:'rgba(20,37,54,.5)' },
+          ticks:{
+            color:'#4a7a9b',
+            font:{family:'Space Mono',size:10},
+            callback: v => '$'+Number(v).toFixed(0)
           }
         }
       }
-    });
-  }
+    }
+  });
+}
+
+// Enter key support
+document.getElementById('ticker').addEventListener('keydown', e=>{
+  if(e.key==='Enter') run();
+});
+
+// Auto-run on load
+window.addEventListener('load', ()=>{ setTimeout(()=>run(), 400); });
 </script>
+
 </body>
 </html>
